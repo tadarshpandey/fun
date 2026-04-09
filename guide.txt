@@ -1,0 +1,4 @@
+>> open project
+>> activate virtual environment n 
+>> n then start working
+>> fix UI first then go for some backend do them partially
