@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 # Use the new required SDK
 from google import genai
+from google.genai import errors
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,6 +19,29 @@ API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 # Global dict to temporarily store the generated questions
 CURRENT_QUESTIONS = {}
+
+def generate_with_fallback(client, prompt):
+    # If the first model is experiencing 503 high demand or 429 quota exhaustion, we cascade to alternatives
+    models_to_try = [
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
+        'gemini-flash-latest'
+    ]
+    
+    last_error = None
+    for model_name in models_to_try:
+        try:
+            return client.models.generate_content(
+                model=model_name,
+                contents=prompt
+            )
+        except errors.APIError as e:
+            if e.code in [503, 429, 404]:
+                last_error = e
+                continue # Try the next model
+            raise e # Reraise if it's some other error (like bad prompt)
+            
+    raise Exception(f"All fallback models failed. Last error: {str(last_error)}")
 
 class UploadResumeView(APIView):
     def post(self, request):
@@ -46,7 +70,7 @@ class UploadResumeView(APIView):
         Read this candidate's resume text below.
         
         1. Give a brutal 1-sentence analysis/greeting based on their specific skills or experience.
-        2. Generate exactly 3 highly difficult technical interview questions tailored EXACTLY to the skills listed on their resume.
+        2. Generate exactly 3 highly difficult technical interview questions tailored EXACTLY to the skills listed on their resume. Make sure these questions are concise, specific, and answerable in 3-4 short sentences max (e.g., "What is the exact difference between X and Y?" instead of broad architectural questions).
         
         Resume text:
         {resume_text[:3000]}
@@ -64,10 +88,7 @@ class UploadResumeView(APIView):
         
         try:
             client = genai.Client(api_key=API_KEY)
-            response = client.models.generate_content(
-                model='gemini-1.5-flash',
-                contents=prompt
-            )
+            response = generate_with_fallback(client, prompt)
             
             response_text = response.text.strip()
             if response_text.startswith("```json"):
@@ -113,7 +134,7 @@ class EvaluateAnswerView(APIView):
         The candidate answered with: "{text_input}"
         
         Evaluate their technical accuracy. 
-        If they said "um", waffled, dodged the question, gave a short answer, or were technically wrong, roast them brutally and specifically.
+        If they said "um", waffled, dodged the question, or were technically wrong, roast them brutally and specifically.
         Assign a score out of 10.
         Give the actual correct, concise technical answer.
         
@@ -127,10 +148,7 @@ class EvaluateAnswerView(APIView):
         
         try:
             client = genai.Client(api_key=API_KEY)
-            response = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=prompt
-            )
+            response = generate_with_fallback(client, prompt)
             
             response_text = response.text.strip()
             if response_text.startswith("```json"):
