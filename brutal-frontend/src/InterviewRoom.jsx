@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 // Polyfill for speech recognition
+// NOTE: We use the browser's NATIVE Speech-to-Text API (webkitSpeechRecognition)
+// This saves us from managing audio blobs, sending them to the backend, and paying for Whisper API.
+// It transcribes the user's speech instantly into text locally on the client.
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 export default function InterviewRoom() {
@@ -23,7 +26,9 @@ export default function InterviewRoom() {
   useEffect(() => {
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
+      // continuous = true allows it to keep listening even if the user pauses briefly
       recognition.continuous = true;
+      // interimResults = true allows us to display the text as they are speaking it (live subtitles)
       recognition.interimResults = true;
       recognition.lang = "en-US";
 
@@ -217,27 +222,39 @@ export default function InterviewRoom() {
                &gt; {questions[currentQIndex].text}
             </div>
 
-            <div className="bg-black/50 border border-gray-800 p-4 mb-8 min-h-32">
-                <div className="text-xs text-gray-500 mb-2 uppercase tracking-widest">Live Transcript</div>
-                <p className="text-white text-lg">
-                    {liveTranscript || <span className="opacity-30 italic">Waiting for you to speak...</span>}
-                </p>
+            <div className="bg-black/50 border border-gray-800 p-4 mb-4 min-h-32 flex flex-col">
+                <div className="text-xs text-gray-500 mb-2 uppercase tracking-widest">Live Transcript / Manual Input</div>
+                <textarea 
+                    className="w-full bg-transparent text-white text-lg resize-none outline-none flex-grow min-h-24 placeholder-gray-700"
+                    placeholder="Waiting for you to speak, or click here to type..."
+                    value={liveTranscript}
+                    onChange={(e) => setLiveTranscript(e.target.value)}
+                />
             </div>
 
-            <button
-               onMouseDown={startAnswering}
-               onMouseUp={stopAnsweringAndSubmit}
-               onTouchStart={startAnswering}
-               onTouchEnd={stopAnsweringAndSubmit}
-               className={`w-full py-6 text-2xl font-bold uppercase transition-all ${
-                   isListening 
-                   ? 'bg-red-600 text-white animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.5)]' 
-                   : 'bg-green-700 hover:bg-green-600 text-black'
-               }`}
-            >
-               {isListening ? "🎙️ Recording... Release to Submit" : "Hold to Speak"}
-            </button>
-            <p className="text-center text-xs mt-2 opacity-50">Warning: Silence is heavily penalized.</p>
+            <div className="flex flex-col md:flex-row gap-4">
+                <button
+                   onMouseDown={startAnswering}
+                   onMouseUp={stopAnsweringAndSubmit}
+                   onTouchStart={startAnswering}
+                   onTouchEnd={stopAnsweringAndSubmit}
+                   className={`flex-grow py-6 text-2xl font-bold uppercase transition-all ${
+                       isListening 
+                       ? 'bg-red-600 text-white animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.5)]' 
+                       : 'bg-green-700 hover:bg-green-600 text-black'
+                   }`}
+                >
+                   {isListening ? "🎙️ Recording..." : "Hold to Speak"}
+                </button>
+                
+                <button
+                   onClick={() => stopAnsweringAndSubmit()}
+                   className="py-6 px-8 text-xl font-bold uppercase bg-gray-800 hover:bg-gray-700 text-white border-2 border-green-700 transition-all text-nowrap"
+                >
+                   Submit Text
+                </button>
+            </div>
+            <p className="text-center text-xs mt-4 opacity-50">Warning: Silence or short texts are heavily penalized.</p>
           </div>
         )}
 

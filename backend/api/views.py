@@ -21,11 +21,17 @@ API_KEY = os.environ.get("GEMINI_API_KEY", "")
 CURRENT_QUESTIONS = {}
 
 def generate_with_fallback(client, prompt):
-    # If the first model is experiencing 503 high demand or 429 quota exhaustion, we cascade to alternatives
+    """
+    Robust API Fallback Engine:
+    During a hackathon, free-tier APIs often experience high traffic (Error 503) 
+    or hit strict quota limits (Error 429). 
+    Instead of failing the demo, this function catches those specific errors
+    and instantly cascades to a slightly older or lighter model as a backup.
+    """
     models_to_try = [
-        'gemini-2.5-flash',
-        'gemini-2.5-flash-lite',
-        'gemini-flash-latest'
+        'gemini-2.5-flash',       # Primary model (Smartest/Fastest)
+        'gemini-2.5-flash-lite',  # Lighter backup variant
+        'gemini-flash-latest'     # General backup pool
     ]
     
     last_error = None
@@ -36,10 +42,11 @@ def generate_with_fallback(client, prompt):
                 contents=prompt
             )
         except errors.APIError as e:
+            # 503 = Server Overloaded, 429 = Quota Exceeded, 404 = Model Not Found
             if e.code in [503, 429, 404]:
                 last_error = e
-                continue # Try the next model
-            raise e # Reraise if it's some other error (like bad prompt)
+                continue # Gracefully swallow error and try the next model
+            raise e # Reraise immediately if it's a code flaw (like a Bad Request)
             
     raise Exception(f"All fallback models failed. Last error: {str(last_error)}")
 
@@ -90,6 +97,10 @@ class UploadResumeView(APIView):
             client = genai.Client(api_key=API_KEY)
             response = generate_with_fallback(client, prompt)
             
+            # --- JSON Extraction Logic ---
+            # LLMs often confidently wrap their JSON responses in markdown code blocks 
+            # (e.g. ```json ... ```) even when we tell them not to.
+            # This logic strips those markdown wrappers out so json.loads() doesn't crash.
             response_text = response.text.strip()
             if response_text.startswith("```json"):
                 response_text = response_text[7:-3]
