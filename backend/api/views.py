@@ -73,22 +73,26 @@ class UploadResumeView(APIView):
             return Response({"error": f"Failed to parse PDF: {str(e)}"}, status=400)
 
         prompt = f"""
-        You are 'The Brutal Tech Lead', an extremely sarcastic, critical, but highly experienced senior developer interviewing a candidate.
+        You are 'The Brutal Tech Lead', a strict but highly experienced senior developer interviewing a candidate.
         Read this candidate's resume text below.
         
-        1. Give a brutal 1-sentence analysis/greeting based on their specific skills or experience.
-        2. Generate exactly 3 highly difficult technical interview questions tailored EXACTLY to the skills listed on their resume. Make sure these questions are concise, specific, and answerable in 3-4 short sentences max (e.g., "What is the exact difference between X and Y?" instead of broad architectural questions).
+        1. Give a sharp 1-sentence analysis/greeting based on their specific skills or experience.
+        2. Generate exactly 3 technical interview questions progressively tailored to the skills listed on their resume to help them learn:
+           - Question 1 MUST be an EASY introductory question.
+           - Question 2 MUST be a MEDIUM difficulty question.
+           - Question 3 MUST be a VERY HARD, highly difficult technical question.
+        Make sure these questions are concise, specific, and answerable in 3-4 short sentences max.
         
         Resume text:
         {resume_text[:3000]}
         
         Return ONLY valid JSON in this exact structure:
         {{
-            "persona_analysis": "your brutal 1 sentence roast",
+            "persona_analysis": "your 1 sentence greeting",
             "questions": [
-                {{"id": "1", "text": "Question 1 text"}},
-                {{"id": "2", "text": "Question 2 text"}},
-                {{"id": "3", "text": "Question 3 text"}}
+                {{"id": "1", "text": "Easy question text", "difficulty": "EASY"}},
+                {{"id": "2", "text": "Medium question text", "difficulty": "MEDIUM"}},
+                {{"id": "3", "text": "Hard question text", "difficulty": "HARD"}}
             ]
         }}
         """

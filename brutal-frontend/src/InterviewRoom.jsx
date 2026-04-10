@@ -171,17 +171,17 @@ export default function InterviewRoom() {
   // --- UI Renders ---
 
   return (
-    <div className="min-h-screen bg-black text-green-500 font-mono flex flex-col items-center justify-center p-6 relative">
+    <div className="min-h-screen bg-slate-950 text-indigo-100 font-outfit flex flex-col items-center justify-center p-6 relative">
       
       <div className="absolute top-4 left-4 text-xs opacity-50 uppercase">
         Connection: SECURE // Audio: ACTIVE
       </div>
 
-      <h1 className="text-4xl md:text-6xl mb-12 font-bold tracking-tighter uppercase text-center border-b-4 border-green-800 pb-2">
-        <span className="text-red-600">💀</span> The Brutal Tech Lead
+      <h1 className="text-4xl md:text-6xl mb-12 font-extrabold tracking-tight text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500 pb-2">
+        <span className="text-rose-500">💀</span> The Brutal Tech Lead
       </h1>
 
-      <div className="w-full max-w-2xl bg-gray-900 border border-green-900 p-8 shadow-2xl shadow-green-900/20">
+      <div className="w-full max-w-2xl bg-slate-900/80 backdrop-blur-md border border-indigo-500/20 rounded-2xl p-8 shadow-2xl shadow-indigo-500/10">
 
         {/* STATE: UPLOAD RESUME */}
         {appState === "UPLOAD_RESUME" && (
@@ -189,7 +189,7 @@ export default function InterviewRoom() {
              <p className="mb-6 indent-8 text-xl">
                Welcome to your technical interview. Upload your resume. Don't worry, we won't actually read it.
              </p>
-             <label className="border-2 border-dashed border-green-700 p-12 w-full hover:bg-green-900/20 cursor-pointer transition-colors group">
+             <label className="border-2 border-dashed border-indigo-500/50 rounded-xl p-12 w-full hover:bg-indigo-500/10 cursor-pointer transition-colors group">
                <span className="block text-2xl font-bold mb-2 group-hover:scale-105 transition-transform">Drop PDF Here</span>
                <span className="text-sm opacity-50">Or click to browse</span>
                <input type="file" className="hidden" accept=".pdf" onChange={handleFileUpload} />
@@ -216,13 +216,24 @@ export default function InterviewRoom() {
         {/* STATE: INTERVIEW */}
         {appState === "INTERVIEW" && questions.length > 0 && (
           <div className="flex flex-col w-full">
-            <div className="mb-2 text-sm opacity-50 uppercase">Question {currentQIndex + 1} of {questions.length}</div>
+            <div className="flex justify-between items-center mb-4">
+              <div className="text-sm font-semibold text-indigo-300 uppercase tracking-wider">Question {currentQIndex + 1} of {questions.length}</div>
+              {questions[currentQIndex].difficulty && (
+                <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                  questions[currentQIndex].difficulty === 'EASY' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                  questions[currentQIndex].difficulty === 'MEDIUM' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                  'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                }`}>
+                  {questions[currentQIndex].difficulty}
+                </div>
+              )}
+            </div>
             
-            <div className="text-2xl mb-8 leading-relaxed font-bold bg-black p-4 border border-green-800">
-               &gt; {questions[currentQIndex].text}
+            <div className="text-2xl mb-8 leading-relaxed font-medium bg-slate-950/50 rounded-xl p-6 border border-indigo-500/20 shadow-inner">
+               {questions[currentQIndex].text}
             </div>
 
-            <div className="bg-black/50 border border-gray-800 p-4 mb-4 min-h-32 flex flex-col">
+            <div className="bg-slate-950/50 rounded-xl border border-indigo-500/20 p-4 mb-6 min-h-32 flex flex-col focus-within:border-indigo-400/50 transition-colors">
                 <div className="text-xs text-gray-500 mb-2 uppercase tracking-widest">Live Transcript / Manual Input</div>
                 <textarea 
                     className="w-full bg-transparent text-white text-lg resize-none outline-none flex-grow min-h-24 placeholder-gray-700"
@@ -234,17 +245,14 @@ export default function InterviewRoom() {
 
             <div className="flex flex-col md:flex-row gap-4">
                 <button
-                   onMouseDown={startAnswering}
-                   onMouseUp={stopAnsweringAndSubmit}
-                   onTouchStart={startAnswering}
-                   onTouchEnd={stopAnsweringAndSubmit}
+                   onClick={() => isListening ? stopAnsweringAndSubmit() : startAnswering()}
                    className={`flex-grow py-6 text-2xl font-bold uppercase transition-all ${
                        isListening 
                        ? 'bg-red-600 text-white animate-pulse shadow-[0_0_20px_rgba(220,38,38,0.5)]' 
                        : 'bg-green-700 hover:bg-green-600 text-black'
                    }`}
                 >
-                   {isListening ? "🎙️ Recording..." : "Hold to Speak"}
+                   {isListening ? "🎙️ Tap to Stop" : "Tap to Speak"}
                 </button>
                 
                 <button
@@ -262,34 +270,34 @@ export default function InterviewRoom() {
         {appState === "JUDGING" && (
           <div className="flex flex-col w-full">
              {loadingText ? (
-                 <div className="text-center py-12 text-2xl animate-pulse text-yellow-500">
+                 <div className="text-center py-12 text-2xl animate-pulse text-amber-500">
                      {loadingText}
                  </div>
              ) : (
                  roastData && (
                      <div className="animate-fade-in-up">
-                         <div className="mb-6 p-6 bg-red-950/40 border border-red-800 text-red-200">
-                             <div className="uppercase text-xs text-red-500 font-bold tracking-widest mb-2">Senior Dev Verdict:</div>
-                             <p className="text-2xl font-bold mb-4">"{roastData.roast}"</p>
+                         <div className="mb-6 p-6 bg-slate-900/80 rounded-xl border border-indigo-500/20 shadow-lg">
+                             <div className="uppercase text-xs text-indigo-400 font-bold tracking-widest mb-2">Technical Feedback:</div>
+                             <p className="text-2xl font-medium mb-4 text-indigo-100">"{roastData.roast}"</p>
                              
-                             <div className="flex items-end justify-between mt-6 pt-4 border-t border-red-900/50">
+                             <div className="flex items-end justify-between mt-6 pt-4 border-t border-indigo-500/20">
                                  <div>
-                                     <div className="text-xs opacity-50 uppercase mb-1">Score</div>
-                                     <div className={`text-4xl font-bold ${roastData.score < 5 ? 'text-red-500' : 'text-yellow-500'}`}>
+                                     <div className="text-xs opacity-70 uppercase mb-1">Score</div>
+                                     <div className={`text-4xl font-bold ${roastData.score < 5 ? 'text-rose-500' : 'text-emerald-500'}`}>
                                          {roastData.score}/10
                                      </div>
                                  </div>
                              </div>
                          </div>
                          
-                         <div className="p-4 bg-green-950/20 border border-green-900/50 text-green-600/80 mb-8">
-                             <div className="uppercase text-xs font-bold mb-1">What you should have said:</div>
-                             <p>{roastData.correct_answer}</p>
+                         <div className="p-6 bg-emerald-950/20 rounded-xl border border-emerald-500/20 text-emerald-200 mb-8 shadow-inner">
+                             <div className="uppercase text-xs font-bold text-emerald-400 mb-2">Ideal Answer:</div>
+                             <p className="leading-relaxed whitespace-pre-line">{roastData.correct_answer}</p>
                          </div>
 
                          <button
                             onClick={nextQuestion}
-                            className="w-full py-4 bg-gray-800 hover:bg-gray-700 text-white font-bold uppercase border-2 border-gray-600"
+                            className="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold shadow-lg shadow-indigo-500/20 transition-all"
                          >
                             I Accept My Flaws. Next Question.
                          </button>
